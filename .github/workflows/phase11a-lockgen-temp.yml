@@ -39,8 +39,10 @@ jobs:
           sha256sum package.json | tee /tmp/package.after.sha
           test "$(cut -d' ' -f1 /tmp/package-lock.before.sha)" = "$(cut -d' ' -f1 /tmp/package-lock.after.sha)"
           test "$(cut -d' ' -f1 /tmp/package.before.sha)" = "$(cut -d' ' -f1 /tmp/package.after.sha)"
+      - name: Package dependency tree for candidate-only independent audit
+        run: tar -czf /tmp/phase11a-node-modules.tgz node_modules
       - uses: actions/upload-artifact@v4
         with:
-          name: phase11a-package-lock-verified
-          path: package-lock.json
+          name: phase11a-audit-dependencies
+          path: /tmp/phase11a-node-modules.tgz
           if-no-files-found: error
