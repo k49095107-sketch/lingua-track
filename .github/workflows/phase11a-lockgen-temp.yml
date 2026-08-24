@@ -1,0 +1,36 @@
+name: PHASE 11A Temporary Lock Generation
+
+on:
+  push:
+    branches:
+      - phase11a-lockgen-temp-20260824
+
+jobs:
+  lockgen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+          registry-url: https://registry.npmjs.org
+      - name: Verify exact toolchain
+        run: |
+          node --version
+          npm --version
+          test "$(node --version)" = "v24.19.0"
+          test "$(npm --version)" = "11.17.0"
+      - name: Generate lockfile
+        run: npm install --package-lock-only --no-audit --no-fund
+      - name: Verify lock metadata
+        run: |
+          node -e "const p=require('./package.json');const l=require('./package-lock.json');if(l.lockfileVersion!==3||l.name!==p.name||l.version!==p.version||l.packages[''].name!==p.name||l.packages[''].version!==p.version)process.exit(1)"
+      - name: Verify clean npm ci
+        run: npm ci --no-audit --no-fund
+      - name: Ensure package and lock remain unchanged after npm ci
+        run: git diff --exit-code -- package.json package-lock.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase11a-package-lock
+          path: package-lock.json
+          if-no-files-found: error
