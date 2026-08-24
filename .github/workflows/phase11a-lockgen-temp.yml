@@ -43,6 +43,8 @@ jobs:
         run: tar -czf /tmp/phase11a-node-modules.tgz node_modules
       - uses: actions/upload-artifact@v4
         with:
-          name: phase11a-audit-dependencies
-          path: /tmp/phase11a-node-modules.tgz
+          name: phase11a-rc2-audit
+          path: |
+            package-lock.json
+            /tmp/phase11a-node-modules.tgz
           if-no-files-found: error
