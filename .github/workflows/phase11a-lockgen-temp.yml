@@ -1,9 +1,9 @@
 name: PHASE 11A Temporary Lock Generation
 
 on:
-  push:
+  pull_request:
     branches:
-      - phase11a-lockgen-temp-20260824
+      - main
 
 jobs:
   lockgen:
