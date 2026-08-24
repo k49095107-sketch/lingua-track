@@ -14,23 +14,33 @@ jobs:
         with:
           node-version: 24.19.0
           registry-url: https://registry.npmjs.org
-      - name: Verify exact toolchain
+      - name: Verify exact toolchain and environment identity
         run: |
           node --version
           npm --version
+          node -p "process.platform"
+          node -p "process.arch"
           test "$(node --version)" = "v24.19.0"
           test "$(npm --version)" = "11.17.0"
       - name: Generate lockfile
         run: npm install --package-lock-only --no-audit --no-fund
-      - name: Verify lock metadata
+      - name: Verify lock metadata and capture pre-ci identity
         run: |
           node -e "const p=require('./package.json');const l=require('./package-lock.json');if(l.lockfileVersion!==3||l.name!==p.name||l.version!==p.version||l.packages[''].name!==p.name||l.packages[''].version!==p.version)process.exit(1)"
+          cp package-lock.json /tmp/package-lock.before.json
+          sha256sum package-lock.json | tee /tmp/package-lock.before.sha
+          sha256sum package.json | tee /tmp/package.before.sha
       - name: Verify clean npm ci
         run: npm ci --no-audit --no-fund
-      - name: Ensure package and lock remain unchanged after npm ci
-        run: git diff --exit-code -- package.json package-lock.json
+      - name: Prove package and lock byte-identical after npm ci
+        run: |
+          cmp --silent /tmp/package-lock.before.json package-lock.json
+          sha256sum package-lock.json | tee /tmp/package-lock.after.sha
+          sha256sum package.json | tee /tmp/package.after.sha
+          test "$(cut -d' ' -f1 /tmp/package-lock.before.sha)" = "$(cut -d' ' -f1 /tmp/package-lock.after.sha)"
+          test "$(cut -d' ' -f1 /tmp/package.before.sha)" = "$(cut -d' ' -f1 /tmp/package.after.sha)"
       - uses: actions/upload-artifact@v4
         with:
-          name: phase11a-package-lock
+          name: phase11a-package-lock-verified
           path: package-lock.json
           if-no-files-found: error
